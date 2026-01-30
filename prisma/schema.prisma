@@ -7,25 +7,34 @@ datasource db {
   provider = "sqlite"
 }
 
-model Slot {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  date        DateTime
-  maxAttendees Int     @default(20)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  signups     Signup[]
+model Workshop {
+  id            String         @id @default(cuid())
+  chair         String
+  date          DateTime
+  maxMinutes    Int            @default(35)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  presentations Presentation[]
 }
 
-model Signup {
-  id         String   @id @default(cuid())
-  name       String
-  email      String
-  department String
-  slotId     String
-  slot       Slot     @relation(fields: [slotId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
+model Presentation {
+  id           String     @id @default(cuid())
+  title        String
+  description  String
+  name         String
+  email        String
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  minutes      Int        @default(5)
+  workshopId   String
+  workshop     Workshop   @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
 
-  @@unique([email, slotId])
+  @@unique([email, workshopId])
+}
+
+model Department {
+  id            String         @id @default(cuid())
+  name          String         @unique
+  presentations Presentation[]
 }

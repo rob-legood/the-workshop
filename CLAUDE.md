@@ -30,29 +30,31 @@ Prisma 7 uses the `prisma-client` generator which requires a driver adapter. The
 
 ### Data Models
 
-- **Slot**: presentation demo slot (title, description, date, maxAttendees)
-- **Signup**: attendee registration (name, email, department, slotId). Unique constraint on `[email, slotId]`. Cascade delete from parent Slot.
+- **Workshop**: a presentation session with a time budget (chair, date, maxMinutes default 35). No title/description — the workshop is identified by its date and chair.
+- **Presentation**: a presenter's signup for a workshop (title, description, name, email, department, minutes default 5, workshopId). Unique constraint on `[email, workshopId]`. Cascade delete from parent Workshop.
+
+Capacity is tracked by **total minutes**: the sum of all presentation minutes in a workshop must not exceed `maxMinutes`.
 
 ### API Routes
 
 | Route | Method | Purpose |
 |---|---|---|
-| `/api/slots` | GET | List all slots with signups |
-| `/api/slots` | POST | Create a new slot (admin) |
-| `/api/slots/[id]/signups` | POST | Sign up for a slot (validates capacity + duplicate email) |
+| `/api/workshops` | GET | List all workshops with presentations |
+| `/api/workshops` | POST | Create a new workshop (admin) |
+| `/api/workshops/[id]/presentations` | POST | Sign up for a workshop (validates minutes capacity + duplicate email) |
 | `/api/admin` | POST | PIN authentication (checks against `ADMIN_PIN` env var, default `1234`) |
 
 Dynamic route params use the Next.js 16 async pattern: `{ params }: { params: Promise<{ id: string }> }`.
 
 ### Pages
 
-- `/` — Public landing page. Client component that fetches slots and renders `SlotCard` components with signup dialogs.
-- `/admin` — PIN-gated admin dashboard. Client-side auth state (no sessions/tokens). Shows `CreateSlotForm` and `AdminDataTable` with per-slot attendee tables.
+- `/` — Public landing page. Client component that fetches workshops and renders `WorkshopCard` components with presentation signup dialogs.
+- `/admin` — PIN-gated admin dashboard. Client-side auth state (no sessions/tokens). Shows `CreateWorkshopForm` and `AdminDataTable` with per-workshop presenter tables.
 
 ### Component Organization
 
 - `src/components/ui/` — shadcn/ui primitives (Card, Table, Button, Input, Label, Dialog, Badge). Style variant: "new-york". Do not edit directly; re-add via `npx shadcn@latest add <component>`.
-- `src/components/` — Feature components (SlotCard, SignupForm, CreateSlotForm, AdminDataTable). All are `"use client"` components.
+- `src/components/` — Feature components (WorkshopCard, PresentationForm, CreateWorkshopForm, AdminDataTable). All are `"use client"` components.
 - `src/lib/utils.ts` — `cn()` helper (clsx + tailwind-merge).
 
 ### Styling

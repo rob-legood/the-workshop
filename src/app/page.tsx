@@ -1,31 +1,43 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { SlotCard } from "@/components/slot-card";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { WorkshopCard } from "@/components/workshop-card";
 
-interface Slot {
+interface Workshop {
   id: string;
-  title: string;
-  description: string;
+  chair: string;
   date: string;
-  maxAttendees: number;
-  signups: { id: string }[];
+  maxMinutes: number;
+  presentations: {
+    id: string;
+    title: string;
+    description: string;
+    name: string;
+    email: string;
+    department: { id: string; name: string };
+    minutes: number;
+  }[];
 }
 
 export default function HomePage() {
-  const [slots, setSlots] = useState<Slot[]>([]);
+  const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchSlots = useCallback(async () => {
-    const res = await fetch("/api/slots");
+  const fetchWorkshops = useCallback(async () => {
+    const res = await fetch("/api/workshops");
     const data = await res.json();
-    setSlots(data);
+    setWorkshops(data);
     setLoading(false);
   }, []);
 
   useEffect(() => {
-    fetchSlots();
-  }, [fetchSlots]);
+    fetchWorkshops();
+  }, [fetchWorkshops]);
+
+  const futureWorkshops = useMemo(
+    () => workshops.filter((w) => new Date(w.date) > new Date()),
+    [workshops]
+  );
 
   return (
     <main className="min-h-screen bg-background">
@@ -33,20 +45,31 @@ export default function HomePage() {
         <div className="mb-10 text-center">
           <h1 className="text-4xl font-bold tracking-tight">The Workshop</h1>
           <p className="mt-2 text-lg text-muted-foreground">
-            Presentation Signup &mdash; Browse available demo slots and reserve your spot.
+            Browse upcoming workshops and sign up to present.
           </p>
         </div>
 
         {loading ? (
-          <p className="text-center text-muted-foreground">Loading slots...</p>
-        ) : slots.length === 0 ? (
           <p className="text-center text-muted-foreground">
-            No demo slots available yet. Check back soon!
+            Loading workshops...
+          </p>
+        ) : futureWorkshops.length === 0 ? (
+          <p className="text-center text-muted-foreground">
+            No upcoming workshops. Check back soon!
           </p>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2">
-            {slots.map((slot) => (
-              <SlotCard key={slot.id} slot={slot} onSignup={fetchSlots} />
+            {futureWorkshops.map((workshop, i) => (
+              <div
+                key={workshop.id}
+                className={i === 0 ? "sm:col-span-2" : ""}
+              >
+                <WorkshopCard
+                  workshop={workshop}
+                  onSignup={fetchWorkshops}
+                  featured={i === 0}
+                />
+              </div>
             ))}
           </div>
         )}

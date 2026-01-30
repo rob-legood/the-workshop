@@ -12,42 +12,45 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AdminDataTable } from "@/components/admin-data-table";
-import { CreateSlotForm } from "@/components/create-slot-form";
+import { CreateWorkshopForm } from "@/components/create-workshop-form";
 
-interface Signup {
+interface Presentation {
   id: string;
+  title: string;
   name: string;
   email: string;
-  department: string;
+  department: { id: string; name: string };
+  minutes: number;
   createdAt: string;
 }
 
-interface Slot {
+interface Workshop {
   id: string;
-  title: string;
+  chair: string;
   date: string;
-  maxAttendees: number;
-  signups: Signup[];
+  maxMinutes: number;
+  presentations: Presentation[];
 }
 
 export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
-  const [slots, setSlots] = useState<Slot[]>([]);
+  const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [loading, setLoading] = useState(false);
+  const [editingWorkshop, setEditingWorkshop] = useState<Workshop | null>(null);
 
-  const fetchSlots = useCallback(async () => {
+  const fetchWorkshops = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/slots");
+    const res = await fetch("/api/workshops");
     const data = await res.json();
-    setSlots(data);
+    setWorkshops(data);
     setLoading(false);
   }, []);
 
   useEffect(() => {
-    if (authenticated) fetchSlots();
-  }, [authenticated, fetchSlots]);
+    if (authenticated) fetchWorkshops();
+  }, [authenticated, fetchWorkshops]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -104,9 +107,11 @@ export default function AdminPage() {
       <div className="mx-auto max-w-5xl px-4 py-12">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Admin Dashboard
+            </h1>
             <p className="mt-1 text-muted-foreground">
-              Manage demo slots and view attendees.
+              Manage workshops and view presentations.
             </p>
           </div>
           <Button variant="outline" onClick={() => setAuthenticated(false)}>
@@ -115,14 +120,20 @@ export default function AdminPage() {
         </div>
 
         <div className="mb-8">
-          <CreateSlotForm onCreated={fetchSlots} />
+          <CreateWorkshopForm
+            onCreated={fetchWorkshops}
+            workshop={editingWorkshop}
+            onCancel={() => setEditingWorkshop(null)}
+          />
         </div>
 
-        <h2 className="mb-4 text-xl font-semibold">Slots &amp; Attendees</h2>
+        <h2 className="mb-4 text-xl font-semibold">
+          Workshops &amp; Presentations
+        </h2>
         {loading ? (
           <p className="text-muted-foreground">Loading...</p>
         ) : (
-          <AdminDataTable slots={slots} />
+          <AdminDataTable workshops={workshops} onEdit={setEditingWorkshop} />
         )}
       </div>
     </main>

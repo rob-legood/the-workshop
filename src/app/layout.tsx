@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "The Workshop — Presentation Signup",
-  description: "Browse available demo slots and sign up for presentations.",
+  description: "Browse available workshops and sign up to present.",
 };
 
 export default function RootLayout({

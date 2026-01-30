@@ -5,67 +5,95 @@ import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 const adapter = new PrismaBetterSqlite3({ url: "file:dev.db" });
 const prisma = new PrismaClient({ adapter });
 
+const DEPARTMENT_NAMES = [
+  "Softy",
+  "Codebusters",
+  "French Press",
+  "PMO",
+  "Product",
+  "Design",
+  "Marketing",
+  "Contact Centre",
+];
+
 async function main() {
   // Clear existing data
-  await prisma.signup.deleteMany();
-  await prisma.slot.deleteMany();
+  await prisma.presentation.deleteMany();
+  await prisma.workshop.deleteMany();
+  await prisma.department.deleteMany();
 
-  // Create sample slots
-  const slot1 = await prisma.slot.create({
+  // Seed departments
+  await prisma.department.createMany({
+    data: DEPARTMENT_NAMES.map((name) => ({ name })),
+  });
+
+  const departments = await prisma.department.findMany();
+  const deptByName = Object.fromEntries(departments.map((d) => [d.name, d.id]));
+
+  // Create sample workshops
+  const workshop1 = await prisma.workshop.create({
     data: {
-      title: "React Server Components Deep Dive",
-      description:
-        "An in-depth look at RSC architecture, streaming, and how to migrate existing apps.",
+      chair: "Jane Doe",
       date: new Date("2026-02-15T10:00:00"),
-      maxAttendees: 25,
+      maxMinutes: 35,
     },
   });
 
-  const slot2 = await prisma.slot.create({
+  const workshop2 = await prisma.workshop.create({
     data: {
-      title: "Building with AI Agents",
-      description:
-        "Demo of integrating LLM-powered agents into internal tooling and workflows.",
+      chair: "John Smith",
       date: new Date("2026-02-22T14:00:00"),
-      maxAttendees: 30,
+      maxMinutes: 45,
     },
   });
 
-  await prisma.slot.create({
+  await prisma.workshop.create({
     data: {
-      title: "Design System v2 Rollout",
-      description:
-        "Walkthrough of the new component library, migration guide, and Figma sync.",
+      chair: "Maria Garcia",
       date: new Date("2026-03-01T11:00:00"),
-      maxAttendees: 20,
+      maxMinutes: 30,
     },
   });
 
-  // Add a few sample signups
-  await prisma.signup.createMany({
+  // Add a few sample presentations
+  await prisma.presentation.createMany({
     data: [
       {
+        title: "React Server Components Deep Dive",
+        description:
+          "An in-depth look at RSC architecture, streaming, and migration.",
         name: "Alice Johnson",
         email: "alice@company.com",
-        department: "Engineering",
-        slotId: slot1.id,
+        departmentId: deptByName["Codebusters"],
+        minutes: 10,
+        workshopId: workshop1.id,
       },
       {
+        title: "Building with AI Agents",
+        description:
+          "Demo of integrating LLM-powered agents into internal tooling.",
         name: "Bob Smith",
         email: "bob@company.com",
-        department: "Product",
-        slotId: slot1.id,
+        departmentId: deptByName["Product"],
+        minutes: 5,
+        workshopId: workshop1.id,
       },
       {
+        title: "Design System v2 Rollout",
+        description:
+          "Walkthrough of the new component library and Figma sync.",
         name: "Carol Williams",
         email: "carol@company.com",
-        department: "Design",
-        slotId: slot2.id,
+        departmentId: deptByName["Design"],
+        minutes: 15,
+        workshopId: workshop2.id,
       },
     ],
   });
 
-  console.log("Seeded 3 slots and 3 signups.");
+  console.log(
+    `Seeded ${DEPARTMENT_NAMES.length} departments, 3 workshops, and 3 presentations.`
+  );
 }
 
 main()

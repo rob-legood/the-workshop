@@ -9,82 +9,109 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
-interface Signup {
+interface Presentation {
   id: string;
+  title: string;
   name: string;
   email: string;
-  department: string;
+  department: { id: string; name: string };
+  minutes: number;
   createdAt: string;
 }
 
-interface Slot {
+interface Workshop {
   id: string;
-  title: string;
+  chair: string;
   date: string;
-  maxAttendees: number;
-  signups: Signup[];
+  maxMinutes: number;
+  presentations: Presentation[];
 }
 
 interface AdminDataTableProps {
-  slots: Slot[];
+  workshops: Workshop[];
+  onEdit?: (workshop: Workshop) => void;
 }
 
-export function AdminDataTable({ slots }: AdminDataTableProps) {
-  if (slots.length === 0) {
+export function AdminDataTable({ workshops, onEdit }: AdminDataTableProps) {
+  if (workshops.length === 0) {
     return (
       <p className="text-center text-muted-foreground">
-        No slots created yet. Use the form above to create one.
+        No workshops created yet. Use the form above to create one.
       </p>
     );
   }
 
   return (
     <div className="space-y-8">
-      {slots.map((slot) => {
-        const spotsLeft = slot.maxAttendees - slot.signups.length;
+      {workshops.map((workshop) => {
+        const usedMinutes = workshop.presentations.reduce(
+          (sum, p) => sum + p.minutes,
+          0
+        );
+        const minutesLeft = workshop.maxMinutes - usedMinutes;
         return (
-          <div key={slot.id} className="rounded-lg border">
+          <div key={workshop.id} className="rounded-lg border">
             <div className="flex items-center justify-between border-b px-4 py-3">
               <div>
-                <h3 className="font-semibold">{slot.title}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {new Date(slot.date).toLocaleDateString("en-US", {
+                <h3 className="font-semibold">
+                  {new Date(workshop.date).toLocaleDateString("en-US", {
                     weekday: "short",
                     month: "short",
                     day: "numeric",
                     hour: "numeric",
                     minute: "2-digit",
                   })}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Chair: {workshop.chair}
                 </p>
               </div>
-              <Badge variant={spotsLeft <= 0 ? "destructive" : "secondary"}>
-                {slot.signups.length} / {slot.maxAttendees} attendees
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant={minutesLeft <= 0 ? "destructive" : "secondary"}>
+                  {usedMinutes} / {workshop.maxMinutes} min
+                </Badge>
+                {onEdit && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEdit(workshop)}
+                  >
+                    Edit
+                  </Button>
+                )}
+              </div>
             </div>
 
-            {slot.signups.length === 0 ? (
+            {workshop.presentations.length === 0 ? (
               <p className="px-4 py-4 text-sm text-muted-foreground">
-                No signups yet.
+                No presentations yet.
               </p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Title</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Department</TableHead>
+                    <TableHead>Minutes</TableHead>
                     <TableHead>Signed Up</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {slot.signups.map((signup) => (
-                    <TableRow key={signup.id}>
-                      <TableCell className="font-medium">{signup.name}</TableCell>
-                      <TableCell>{signup.email}</TableCell>
-                      <TableCell>{signup.department}</TableCell>
+                  {workshop.presentations.map((presentation) => (
+                    <TableRow key={presentation.id}>
+                      <TableCell className="font-medium">
+                        {presentation.title}
+                      </TableCell>
+                      <TableCell>{presentation.name}</TableCell>
+                      <TableCell>{presentation.email}</TableCell>
+                      <TableCell>{presentation.department.name}</TableCell>
+                      <TableCell>{presentation.minutes}</TableCell>
                       <TableCell>
-                        {new Date(signup.createdAt).toLocaleDateString()}
+                        {new Date(presentation.createdAt).toLocaleDateString()}
                       </TableCell>
                     </TableRow>
                   ))}
