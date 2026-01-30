@@ -17,7 +17,8 @@ const DEPARTMENT_NAMES = [
 ];
 
 async function main() {
-  // Clear existing data
+  // Clear existing data (order matters due to foreign keys)
+  await prisma.feedback.deleteMany();
   await prisma.presentation.deleteMany();
   await prisma.workshop.deleteMany();
   await prisma.department.deleteMany();
@@ -56,43 +57,73 @@ async function main() {
   });
 
   // Add a few sample presentations
-  await prisma.presentation.createMany({
+  const pres1 = await prisma.presentation.create({
+    data: {
+      title: "React Server Components Deep Dive",
+      description:
+        "An in-depth look at RSC architecture, streaming, and migration.",
+      name: "Alice Johnson",
+      email: "alice@company.com",
+      departmentId: deptByName["Codebusters"],
+      minutes: 10,
+      workshopId: workshop1.id,
+    },
+  });
+
+  const pres2 = await prisma.presentation.create({
+    data: {
+      title: "Building with AI Agents",
+      description:
+        "Demo of integrating LLM-powered agents into internal tooling.",
+      name: "Bob Smith",
+      email: "bob@company.com",
+      departmentId: deptByName["Product"],
+      minutes: 5,
+      workshopId: workshop1.id,
+    },
+  });
+
+  const pres3 = await prisma.presentation.create({
+    data: {
+      title: "Design System v2 Rollout",
+      description:
+        "Walkthrough of the new component library and Figma sync.",
+      name: "Carol Williams",
+      email: "carol@company.com",
+      departmentId: deptByName["Design"],
+      minutes: 15,
+      workshopId: workshop2.id,
+    },
+  });
+
+  // Add sample feedback
+  await prisma.feedback.createMany({
     data: [
       {
-        title: "React Server Components Deep Dive",
-        description:
-          "An in-depth look at RSC architecture, streaming, and migration.",
-        name: "Alice Johnson",
-        email: "alice@company.com",
-        departmentId: deptByName["Codebusters"],
-        minutes: 10,
-        workshopId: workshop1.id,
+        name: "David Lee",
+        text: "Great overview of RSC! Would love a follow-up on streaming patterns.",
+        presentationId: pres1.id,
       },
       {
-        title: "Building with AI Agents",
-        description:
-          "Demo of integrating LLM-powered agents into internal tooling.",
-        name: "Bob Smith",
-        email: "bob@company.com",
-        departmentId: deptByName["Product"],
-        minutes: 5,
-        workshopId: workshop1.id,
+        name: "Emma Wilson",
+        text: "Very clear explanation. The migration tips were especially useful.",
+        presentationId: pres1.id,
       },
       {
-        title: "Design System v2 Rollout",
-        description:
-          "Walkthrough of the new component library and Figma sync.",
-        name: "Carol Williams",
-        email: "carol@company.com",
-        departmentId: deptByName["Design"],
-        minutes: 15,
-        workshopId: workshop2.id,
+        name: "Frank Chen",
+        text: "Impressive demo. How does this handle rate limiting with the LLM provider?",
+        presentationId: pres2.id,
+      },
+      {
+        name: "Grace Kim",
+        text: "The new component library looks polished. Excited for the Figma sync feature.",
+        presentationId: pres3.id,
       },
     ],
   });
 
   console.log(
-    `Seeded ${DEPARTMENT_NAMES.length} departments, 3 workshops, and 3 presentations.`
+    `Seeded ${DEPARTMENT_NAMES.length} departments, 3 workshops, 3 presentations, and 4 feedbacks.`
   );
 }
 

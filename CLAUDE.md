@@ -32,6 +32,7 @@ Prisma 7 uses the `prisma-client` generator which requires a driver adapter. The
 
 - **Workshop**: a presentation session with a time budget (chair, date, maxMinutes default 35). No title/description — the workshop is identified by its date and chair.
 - **Presentation**: a presenter's signup for a workshop (title, description, name, email, department, minutes default 5, workshopId). Unique constraint on `[email, workshopId]`. Cascade delete from parent Workshop.
+- **Feedback**: feedback on a presentation (name, text, presentationId). Cascade delete from parent Presentation.
 
 Capacity is tracked by **total minutes**: the sum of all presentation minutes in a workshop must not exceed `maxMinutes`.
 
@@ -42,6 +43,8 @@ Capacity is tracked by **total minutes**: the sum of all presentation minutes in
 | `/api/workshops` | GET | List all workshops with presentations |
 | `/api/workshops` | POST | Create a new workshop (admin) |
 | `/api/workshops/[id]/presentations` | POST | Sign up for a workshop (validates minutes capacity + duplicate email) |
+| `/api/workshops/[id]/presentations/[presentationId]/feedback` | GET | List feedback for a presentation |
+| `/api/workshops/[id]/presentations/[presentationId]/feedback` | POST | Submit feedback for a presentation |
 | `/api/admin` | POST | PIN authentication (checks against `ADMIN_PIN` env var, default `1234`) |
 
 Dynamic route params use the Next.js 16 async pattern: `{ params }: { params: Promise<{ id: string }> }`.

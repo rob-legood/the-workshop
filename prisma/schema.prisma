@@ -29,8 +29,18 @@ model Presentation {
   workshopId   String
   workshop     Workshop   @relation(fields: [workshopId], references: [id], onDelete: Cascade)
   createdAt    DateTime   @default(now())
+  feedbacks    Feedback[]
 
   @@unique([email, workshopId])
+}
+
+model Feedback {
+  id             String       @id @default(cuid())
+  name           String
+  text           String
+  presentationId String
+  presentation   Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
 }
 
 model Department {

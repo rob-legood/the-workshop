@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -40,6 +41,80 @@ interface WorkshopCardProps {
   featured?: boolean;
 }
 
+interface Feedback {
+  id: string;
+  name: string;
+  text: string;
+  createdAt: string;
+}
+
+function FeedbackDialog({
+  workshopId,
+  presentation,
+  dateStr,
+}: {
+  workshopId: string;
+  presentation: PresentationSummary;
+  dateStr: string;
+}) {
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  function handleOpen(open: boolean) {
+    if (!open) return;
+    setLoading(true);
+    fetch(
+      `/api/workshops/${workshopId}/presentations/${presentation.id}/feedback`
+    )
+      .then((res) => res.json())
+      .then((data) => setFeedbacks(data))
+      .finally(() => setLoading(false));
+  }
+
+  return (
+    <Dialog onOpenChange={handleOpen}>
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex shrink-0 text-muted-foreground hover:text-foreground"
+        >
+          <MessageSquare size={14} />
+        </button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{presentation.title}</DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            {presentation.name} &middot; {presentation.department.name} &middot;{" "}
+            {dateStr}
+          </p>
+        </DialogHeader>
+        <div className="max-h-80 overflow-y-auto">
+          {loading ? (
+            <p className="text-sm text-muted-foreground">Loading feedback...</p>
+          ) : feedbacks.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No feedback yet.</p>
+          ) : (
+            <ul className="space-y-3">
+              {feedbacks.map((f) => (
+                <li key={f.id} className="border-b pb-3 last:border-b-0">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-sm font-medium">{f.name}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {new Date(f.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">{f.text}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function WorkshopCard({ workshop, onSignup, featured }: WorkshopCardProps) {
   const usedMinutes = workshop.presentations.reduce(
     (sum, p) => sum + p.minutes,
@@ -47,7 +122,8 @@ export function WorkshopCard({ workshop, onSignup, featured }: WorkshopCardProps
   );
   const minutesLeft = workshop.maxMinutes - usedMinutes;
   const isFull = minutesLeft <= 0;
-  const dateStr = new Date(workshop.date).toLocaleDateString("en-US", {
+  const workshopDate = new Date(workshop.date);
+  const dateStr = workshopDate.toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -55,6 +131,10 @@ export function WorkshopCard({ workshop, onSignup, featured }: WorkshopCardProps
     hour: "numeric",
     minute: "2-digit",
   });
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  workshopDate.setHours(0, 0, 0, 0);
+  const isPast = workshopDate <= today;
 
   return (
     <Card className={featured ? "border-primary ring-1 ring-primary/20" : ""}>
@@ -97,22 +177,13 @@ export function WorkshopCard({ workshop, onSignup, featured }: WorkshopCardProps
                     </button>
                   }
                 />
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <button
-                      type="button"
-                      className="inline-flex shrink-0 text-muted-foreground hover:text-foreground"
-                    >
-                      <MessageSquare size={14} />
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Feedback</DialogTitle>
-                    </DialogHeader>
-                    <p className="text-sm text-muted-foreground">Coming Soon</p>
-                  </DialogContent>
-                </Dialog>
+                {isPast && (
+                  <FeedbackDialog
+                    workshopId={workshop.id}
+                    presentation={p}
+                    dateStr={dateStr}
+                  />
+                )}
                 <span>
                   <span className="font-medium">{p.name}</span>
                   {" \u2014 "}
