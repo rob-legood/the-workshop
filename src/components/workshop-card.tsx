@@ -9,7 +9,14 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PresentationForm } from "@/components/presentation-form";
-import { Pencil } from "lucide-react";
+import { Pencil, MessageSquare } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface PresentationSummary {
   id: string;
@@ -90,6 +97,22 @@ export function WorkshopCard({ workshop, onSignup, featured }: WorkshopCardProps
                     </button>
                   }
                 />
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex shrink-0 text-muted-foreground hover:text-foreground"
+                    >
+                      <MessageSquare size={14} />
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Feedback</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-sm text-muted-foreground">Coming Soon</p>
+                  </DialogContent>
+                </Dialog>
                 <span>
                   <span className="font-medium">{p.name}</span>
                   {" \u2014 "}
