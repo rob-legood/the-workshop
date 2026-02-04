@@ -10,6 +10,7 @@ export function NavHeader() {
   const links = [
     { href: "/", label: "Upcoming" },
     { href: "/past", label: "Past" },
+    { href: "/feedback", label: "Feedback" },
   ];
 
   return (

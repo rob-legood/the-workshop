@@ -28,7 +28,7 @@ async function main() {
   const FEEDBACK_STATUSES = [
     { name: "New", isClosed: false },
     { name: "Open", isClosed: false },
-    { name: "Tracked", isClosed: false },
+    { name: "Tracked", isClosed: true },
     { name: "Implemented", isClosed: true },
     { name: "Rejected", isClosed: true },
   ];
