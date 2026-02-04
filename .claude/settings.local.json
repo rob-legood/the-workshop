@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npm run db:seed:*)",
+      "Bash(npm run build:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd feedback icon with coming soon dialog on presentation rows\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push)",
+      "Bash(dir:*)",
+      "Bash(npx kill-port 3000)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd Feedback model, API route, and feedback dialog with date gating\n\n- New Feedback model \\(name, text, presentationId\\) with cascade delete\n- GET/POST endpoints at /api/workshops/[id]/presentations/[pid]/feedback\n- FeedbackDialog component fetches and displays feedback on open\n- Feedback icon only shown for past/current-day workshops\n- Seed script updated with sample feedback data\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"Reset database\" npx prisma migrate reset:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd navigation, past workshops page, FeedbackStatus model, and UI improvements\n\n- Add NavHeader component with Upcoming/Past navigation links\n- Create /past page showing past workshops in reverse chronological order\n- Add FeedbackStatus model \\(New, Open, Tracked, Implemented, Rejected\\)\n- Link Feedback to FeedbackStatus with automatic \"New\" default on creation\n- Hide sign up and edit buttons for past workshops\n- Update home page heading to \"Upcoming Workshops\"\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd Feedback page with pagination, status management, and filtering\n\n- Create /feedback page with paginated table view\n- Add toggle to show/hide closed feedback items\n- Click status badge to change feedback status via modal\n- View full feedback details via eye icon modal\n- Add Feedback link to navigation header\n- Create API endpoints: GET/PATCH /api/feedback, GET /api/feedback-statuses\n- Update seed: set Tracked status to isClosed=true\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)"
+    ]
+  }
+}
