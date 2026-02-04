@@ -163,20 +163,22 @@ export function WorkshopCard({ workshop, onSignup, featured }: WorkshopCardProps
           <ul className="space-y-1">
             {workshop.presentations.map((p) => (
               <li key={p.id} className="flex items-center gap-1.5 text-sm">
-                <PresentationForm
-                  workshopId={workshop.id}
-                  workshopDate={dateStr}
-                  presentation={p}
-                  onSuccess={onSignup}
-                  trigger={
-                    <button
-                      type="button"
-                      className="inline-flex shrink-0 text-muted-foreground hover:text-foreground"
-                    >
-                      <Pencil size={14} />
-                    </button>
-                  }
-                />
+                {!isPast && (
+                  <PresentationForm
+                    workshopId={workshop.id}
+                    workshopDate={dateStr}
+                    presentation={p}
+                    onSuccess={onSignup}
+                    trigger={
+                      <button
+                        type="button"
+                        className="inline-flex shrink-0 text-muted-foreground hover:text-foreground"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                    }
+                  />
+                )}
                 {isPast && (
                   <FeedbackDialog
                     workshopId={workshop.id}
@@ -201,14 +203,16 @@ export function WorkshopCard({ workshop, onSignup, featured }: WorkshopCardProps
           </ul>
         )}
       </CardContent>
-      <CardFooter>
-        <PresentationForm
-          workshopId={workshop.id}
-          workshopDate={dateStr}
-          disabled={isFull}
-          onSuccess={onSignup}
-        />
-      </CardFooter>
+      {!isPast && (
+        <CardFooter>
+          <PresentationForm
+            workshopId={workshop.id}
+            workshopDate={dateStr}
+            disabled={isFull}
+            onSuccess={onSignup}
+          />
+        </CardFooter>
+      )}
     </Card>
   );
 }

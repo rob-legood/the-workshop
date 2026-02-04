@@ -35,12 +35,21 @@ model Presentation {
 }
 
 model Feedback {
-  id             String       @id @default(cuid())
+  id             String         @id @default(cuid())
   name           String
   text           String
   presentationId String
-  presentation   Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
-  createdAt      DateTime     @default(now())
+  presentation   Presentation   @relation(fields: [presentationId], references: [id], onDelete: Cascade)
+  statusId       String
+  status         FeedbackStatus @relation(fields: [statusId], references: [id])
+  createdAt      DateTime       @default(now())
+}
+
+model FeedbackStatus {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  isClosed  Boolean    @default(false)
+  feedbacks Feedback[]
 }
 
 model Department {

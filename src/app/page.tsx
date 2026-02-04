@@ -43,7 +43,7 @@ export default function HomePage() {
     <main className="min-h-screen bg-background">
       <div className="mx-auto max-w-4xl px-4 py-12">
         <div className="mb-10 text-center">
-          <h1 className="text-4xl font-bold tracking-tight">The Workshop</h1>
+          <h1 className="text-4xl font-bold tracking-tight">Upcoming Workshops</h1>
           <p className="mt-2 text-lg text-muted-foreground">
             Browse upcoming workshops and sign up to present.
           </p>

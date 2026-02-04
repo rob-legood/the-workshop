@@ -19,9 +19,22 @@ const DEPARTMENT_NAMES = [
 async function main() {
   // Clear existing data (order matters due to foreign keys)
   await prisma.feedback.deleteMany();
+  await prisma.feedbackStatus.deleteMany();
   await prisma.presentation.deleteMany();
   await prisma.workshop.deleteMany();
   await prisma.department.deleteMany();
+
+  // Seed feedback statuses
+  const FEEDBACK_STATUSES = [
+    { name: "New", isClosed: false },
+    { name: "Open", isClosed: false },
+    { name: "Tracked", isClosed: false },
+    { name: "Implemented", isClosed: true },
+    { name: "Rejected", isClosed: true },
+  ];
+  await prisma.feedbackStatus.createMany({ data: FEEDBACK_STATUSES });
+  const statuses = await prisma.feedbackStatus.findMany();
+  const statusByName = Object.fromEntries(statuses.map((s) => [s.name, s.id]));
 
   // Seed departments
   await prisma.department.createMany({
@@ -96,34 +109,38 @@ async function main() {
     },
   });
 
-  // Add sample feedback
+  // Add sample feedback (all default to "New" status)
   await prisma.feedback.createMany({
     data: [
       {
         name: "David Lee",
         text: "Great overview of RSC! Would love a follow-up on streaming patterns.",
         presentationId: pres1.id,
+        statusId: statusByName["New"],
       },
       {
         name: "Emma Wilson",
         text: "Very clear explanation. The migration tips were especially useful.",
         presentationId: pres1.id,
+        statusId: statusByName["New"],
       },
       {
         name: "Frank Chen",
         text: "Impressive demo. How does this handle rate limiting with the LLM provider?",
         presentationId: pres2.id,
+        statusId: statusByName["New"],
       },
       {
         name: "Grace Kim",
         text: "The new component library looks polished. Excited for the Figma sync feature.",
         presentationId: pres3.id,
+        statusId: statusByName["New"],
       },
     ],
   });
 
   console.log(
-    `Seeded ${DEPARTMENT_NAMES.length} departments, 3 workshops, 3 presentations, and 4 feedbacks.`
+    `Seeded ${DEPARTMENT_NAMES.length} departments, ${FEEDBACK_STATUSES.length} feedback statuses, 3 workshops, 3 presentations, and 4 feedbacks.`
   );
 }
 

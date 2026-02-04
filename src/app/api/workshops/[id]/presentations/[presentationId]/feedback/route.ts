@@ -52,8 +52,20 @@ export async function POST(
     );
   }
 
+  // Get the "New" status for default assignment
+  const newStatus = await prisma.feedbackStatus.findUnique({
+    where: { name: "New" },
+  });
+
+  if (!newStatus) {
+    return NextResponse.json(
+      { error: "Feedback status not configured" },
+      { status: 500 }
+    );
+  }
+
   const feedback = await prisma.feedback.create({
-    data: { name, text, presentationId },
+    data: { name, text, presentationId, statusId: newStatus.id },
   });
 
   return NextResponse.json(feedback, { status: 201 });
