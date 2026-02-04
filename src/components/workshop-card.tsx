@@ -59,9 +59,11 @@ function FeedbackDialog({
 }) {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(false);
+  const [name, setName] = useState("");
+  const [text, setText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleOpen(open: boolean) {
-    if (!open) return;
+  function fetchFeedbacks() {
     setLoading(true);
     fetch(
       `/api/workshops/${workshopId}/presentations/${presentation.id}/feedback`
@@ -69,6 +71,29 @@ function FeedbackDialog({
       .then((res) => res.json())
       .then((data) => setFeedbacks(data))
       .finally(() => setLoading(false));
+  }
+
+  function handleOpen(open: boolean) {
+    if (!open) return;
+    fetchFeedbacks();
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || !text.trim()) return;
+    setSubmitting(true);
+    await fetch(
+      `/api/workshops/${workshopId}/presentations/${presentation.id}/feedback`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), text: text.trim() }),
+      }
+    );
+    setName("");
+    setText("");
+    setSubmitting(false);
+    fetchFeedbacks();
   }
 
   return (
@@ -89,7 +114,45 @@ function FeedbackDialog({
             {dateStr}
           </p>
         </DialogHeader>
-        <div className="max-h-80 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="space-y-3 border-b pb-4">
+          <div>
+            <label htmlFor="feedback-name" className="text-sm font-medium">
+              Your Name
+            </label>
+            <input
+              id="feedback-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+              placeholder="Enter your name"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="feedback-text" className="text-sm font-medium">
+              Feedback
+            </label>
+            <textarea
+              id="feedback-text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+              placeholder="Share your feedback..."
+              rows={3}
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={submitting || !name.trim() || !text.trim()}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            {submitting ? "Submitting..." : "Submit Feedback"}
+          </button>
+        </form>
+        <div className="max-h-60 overflow-y-auto">
+          <h4 className="mb-2 text-sm font-medium">Previous Feedback</h4>
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading feedback...</p>
           ) : feedbacks.length === 0 ? (
