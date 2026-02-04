@@ -6,22 +6,30 @@ export async function GET(request: Request) {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = parseInt(searchParams.get("limit") || "10", 10);
   const showClosed = searchParams.get("showClosed") === "true";
+  const departmentId = searchParams.get("departmentId");
 
   const skip = (page - 1) * limit;
 
-  // Get open status IDs if filtering
-  let statusFilter = {};
+  // Build where clause
+  const where: Record<string, unknown> = {};
+
+  // Filter by open status if not showing closed
   if (!showClosed) {
     const openStatuses = await prisma.feedbackStatus.findMany({
       where: { isClosed: false },
       select: { id: true },
     });
-    statusFilter = { statusId: { in: openStatuses.map((s) => s.id) } };
+    where.statusId = { in: openStatuses.map((s) => s.id) };
+  }
+
+  // Filter by department if specified
+  if (departmentId) {
+    where.presentation = { departmentId };
   }
 
   const [feedbacks, total] = await Promise.all([
     prisma.feedback.findMany({
-      where: statusFilter,
+      where,
       include: {
         status: true,
         presentation: {
@@ -35,7 +43,7 @@ export async function GET(request: Request) {
       skip,
       take: limit,
     }),
-    prisma.feedback.count({ where: statusFilter }),
+    prisma.feedback.count({ where }),
   ]);
 
   return NextResponse.json({

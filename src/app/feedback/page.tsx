@@ -27,6 +27,11 @@ import {
 } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+interface Department {
+  id: string;
+  name: string;
+}
+
 interface FeedbackStatus {
   id: string;
   name: string;
@@ -57,6 +62,8 @@ interface Pagination {
 export default function FeedbackPage() {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [statuses, setStatuses] = useState<FeedbackStatus[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     limit: 10,
@@ -66,11 +73,17 @@ export default function FeedbackPage() {
   const [showClosed, setShowClosed] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const fetchFeedbacks = useCallback(async (page: number, includeClosed: boolean) => {
+  const fetchFeedbacks = useCallback(async (page: number, includeClosed: boolean, departmentId: string) => {
     setLoading(true);
-    const res = await fetch(
-      `/api/feedback?page=${page}&limit=10&showClosed=${includeClosed}`
-    );
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: "10",
+      showClosed: String(includeClosed),
+    });
+    if (departmentId) {
+      params.set("departmentId", departmentId);
+    }
+    const res = await fetch(`/api/feedback?${params.toString()}`);
     const data = await res.json();
     setFeedbacks(data.feedbacks);
     setPagination(data.pagination);
@@ -83,13 +96,20 @@ export default function FeedbackPage() {
     setStatuses(data);
   }, []);
 
-  useEffect(() => {
-    fetchStatuses();
-  }, [fetchStatuses]);
+  const fetchDepartments = useCallback(async () => {
+    const res = await fetch("/api/departments");
+    const data = await res.json();
+    setDepartments(data);
+  }, []);
 
   useEffect(() => {
-    fetchFeedbacks(pagination.page, showClosed);
-  }, [fetchFeedbacks, pagination.page, showClosed]);
+    fetchStatuses();
+    fetchDepartments();
+  }, [fetchStatuses, fetchDepartments]);
+
+  useEffect(() => {
+    fetchFeedbacks(pagination.page, showClosed, selectedDepartment);
+  }, [fetchFeedbacks, pagination.page, showClosed, selectedDepartment]);
 
   async function handleStatusChange(feedbackId: string, statusId: string) {
     await fetch(`/api/feedback/${feedbackId}`, {
@@ -97,11 +117,16 @@ export default function FeedbackPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ statusId }),
     });
-    fetchFeedbacks(pagination.page, showClosed);
+    fetchFeedbacks(pagination.page, showClosed, selectedDepartment);
   }
 
   function handleToggleClosed() {
     setShowClosed(!showClosed);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }
+
+  function handleDepartmentChange(value: string) {
+    setSelectedDepartment(value === "all" ? "" : value);
     setPagination((prev) => ({ ...prev, page: 1 }));
   }
 
@@ -128,12 +153,30 @@ export default function FeedbackPage() {
         </div>
 
         <div className="mb-4 flex items-center justify-between">
-          <Button
-            variant={showClosed ? "default" : "outline"}
-            onClick={handleToggleClosed}
-          >
-            {showClosed ? "Showing All" : "Showing Open Only"}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant={showClosed ? "default" : "outline"}
+              onClick={handleToggleClosed}
+            >
+              {showClosed ? "Showing All" : "Showing Open Only"}
+            </Button>
+            <Select
+              value={selectedDepartment || "all"}
+              onValueChange={handleDepartmentChange}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Departments" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Departments</SelectItem>
+                {departments.map((dept) => (
+                  <SelectItem key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="text-sm text-muted-foreground">
             {pagination.total} feedback item{pagination.total !== 1 ? "s" : ""}
           </div>
