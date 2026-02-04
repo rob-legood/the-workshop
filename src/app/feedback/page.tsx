@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface FeedbackStatus {
   id: string;
@@ -158,7 +158,6 @@ export default function FeedbackPage() {
                   <TableHead>Date</TableHead>
                   <TableHead>Preview</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -176,9 +175,8 @@ export default function FeedbackPage() {
                     <TableCell>
                       {new Date(f.createdAt).toLocaleDateString()}
                     </TableCell>
-                    <TableCell className="max-w-[150px] truncate text-muted-foreground">
-                      {f.text.slice(0, 40)}
-                      {f.text.length > 40 ? "..." : ""}
+                    <TableCell className="max-w-[200px] overflow-hidden">
+                      <FeedbackPreviewLink feedback={f} />
                     </TableCell>
                     <TableCell>
                       <StatusChangeBadge
@@ -186,9 +184,6 @@ export default function FeedbackPage() {
                         statuses={statuses}
                         onStatusChange={handleStatusChange}
                       />
-                    </TableCell>
-                    <TableCell>
-                      <FeedbackDetailDialog feedback={f} />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -225,13 +220,18 @@ export default function FeedbackPage() {
   );
 }
 
-function FeedbackDetailDialog({ feedback }: { feedback: Feedback }) {
+function FeedbackPreviewLink({ feedback }: { feedback: Feedback }) {
+  const preview = feedback.text.slice(0, 40) + (feedback.text.length > 40 ? "..." : "");
+
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">
-          <Eye size={14} />
-        </Button>
+        <button
+          type="button"
+          className="block w-full truncate text-left text-primary underline underline-offset-2 hover:text-primary/80 cursor-pointer"
+        >
+          {preview}
+        </button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
