@@ -31,8 +31,19 @@ export default function PastWorkshopsPage() {
   }, []);
 
   useEffect(() => {
-    fetchWorkshops();
-  }, [fetchWorkshops]);
+    let cancelled = false;
+    fetch("/api/workshops")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) {
+          setWorkshops(data);
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const pastWorkshops = useMemo(() => {
     const now = new Date();

@@ -25,7 +25,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Department {
   id: string;
@@ -90,26 +93,46 @@ export default function FeedbackPage() {
     setLoading(false);
   }, []);
 
-  const fetchStatuses = useCallback(async () => {
-    const res = await fetch("/api/feedback-statuses");
-    const data = await res.json();
-    setStatuses(data);
-  }, []);
-
-  const fetchDepartments = useCallback(async () => {
-    const res = await fetch("/api/departments");
-    const data = await res.json();
-    setDepartments(data);
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      fetch("/api/feedback-statuses").then((res) => res.json()),
+      fetch("/api/departments").then((res) => res.json()),
+    ]).then(([statusData, deptData]) => {
+      if (!cancelled) {
+        setStatuses(statusData);
+        setDepartments(deptData);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    fetchStatuses();
-    fetchDepartments();
-  }, [fetchStatuses, fetchDepartments]);
-
-  useEffect(() => {
-    fetchFeedbacks(pagination.page, showClosed, selectedDepartment);
-  }, [fetchFeedbacks, pagination.page, showClosed, selectedDepartment]);
+    let cancelled = false;
+    (async () => {
+      if (!cancelled) setLoading(true);
+      const params = new URLSearchParams({
+        page: String(pagination.page),
+        limit: "10",
+        showClosed: String(showClosed),
+      });
+      if (selectedDepartment) {
+        params.set("departmentId", selectedDepartment);
+      }
+      const res = await fetch(`/api/feedback?${params.toString()}`);
+      const data = await res.json();
+      if (!cancelled) {
+        setFeedbacks(data.feedbacks);
+        setPagination(data.pagination);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pagination.page, showClosed, selectedDepartment]);
 
   async function handleStatusChange(feedbackId: string, statusId: string) {
     await fetch(`/api/feedback/${feedbackId}`, {
@@ -195,6 +218,7 @@ export default function FeedbackPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10"></TableHead>
                   <TableHead>Presentation</TableHead>
                   <TableHead>From</TableHead>
                   <TableHead>Department</TableHead>
@@ -206,6 +230,13 @@ export default function FeedbackPage() {
               <TableBody>
                 {feedbacks.map((f) => (
                   <TableRow key={f.id}>
+                    <TableCell>
+                      <FeedbackEditDialog
+                        feedback={f}
+                        statuses={statuses}
+                        onSave={() => fetchFeedbacks(pagination.page, showClosed, selectedDepartment)}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium max-w-[200px] truncate">
                       {f.presentation.title}
                     </TableCell>
@@ -305,6 +336,106 @@ function FeedbackPreviewLink({ feedback }: { feedback: Feedback }) {
               {feedback.text}
             </p>
           </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function FeedbackEditDialog({
+  feedback,
+  statuses,
+  onSave,
+}: {
+  feedback: Feedback;
+  statuses: FeedbackStatus[];
+  onSave: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(feedback.name);
+  const [text, setText] = useState(feedback.text);
+  const [statusId, setStatusId] = useState(feedback.status.id);
+  const [saving, setSaving] = useState(false);
+
+  function handleOpen(isOpen: boolean) {
+    setOpen(isOpen);
+    if (isOpen) {
+      setName(feedback.name);
+      setText(feedback.text);
+      setStatusId(feedback.status.id);
+    }
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    await fetch(`/api/feedback/${feedback.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, text, statusId }),
+    });
+    setSaving(false);
+    setOpen(false);
+    onSave();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpen}>
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Pencil size={14} />
+        </button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Feedback</DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            {feedback.presentation.title}
+          </p>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="edit-name">From</Label>
+            <Input
+              id="edit-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-text">Feedback</Label>
+            <Textarea
+              id="edit-text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              rows={4}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-status">Status</Label>
+            <Select value={statusId} onValueChange={setStatusId}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {statuses.map((status) => (
+                  <SelectItem key={status.id} value={status.id}>
+                    {status.name}
+                    {status.isClosed && " (Closed)"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            onClick={handleSave}
+            disabled={saving || !name.trim() || !text.trim()}
+            className="w-full"
+          >
+            {saving ? "Saving..." : "Save Changes"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

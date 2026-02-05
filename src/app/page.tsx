@@ -31,8 +31,19 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    fetchWorkshops();
-  }, [fetchWorkshops]);
+    let cancelled = false;
+    fetch("/api/workshops")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) {
+          setWorkshops(data);
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const futureWorkshops = useMemo(
     () => workshops.filter((w) => new Date(w.date) > new Date()),

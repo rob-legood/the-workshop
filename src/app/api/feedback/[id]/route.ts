@@ -7,29 +7,54 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const body = await request.json();
-  const { statusId } = body;
+  const { statusId, name, text } = body;
 
-  if (!statusId) {
-    return NextResponse.json(
-      { error: "statusId is required" },
-      { status: 400 }
-    );
+  // Build update data object with provided fields
+  const updateData: { statusId?: string; name?: string; text?: string } = {};
+
+  if (statusId) {
+    const status = await prisma.feedbackStatus.findUnique({
+      where: { id: statusId },
+    });
+    if (!status) {
+      return NextResponse.json(
+        { error: "Invalid status" },
+        { status: 400 }
+      );
+    }
+    updateData.statusId = statusId;
   }
 
-  const status = await prisma.feedbackStatus.findUnique({
-    where: { id: statusId },
-  });
+  if (name !== undefined) {
+    if (!name.trim()) {
+      return NextResponse.json(
+        { error: "Name cannot be empty" },
+        { status: 400 }
+      );
+    }
+    updateData.name = name.trim();
+  }
 
-  if (!status) {
+  if (text !== undefined) {
+    if (!text.trim()) {
+      return NextResponse.json(
+        { error: "Feedback text cannot be empty" },
+        { status: 400 }
+      );
+    }
+    updateData.text = text.trim();
+  }
+
+  if (Object.keys(updateData).length === 0) {
     return NextResponse.json(
-      { error: "Invalid status" },
+      { error: "No valid fields to update" },
       { status: 400 }
     );
   }
 
   const feedback = await prisma.feedback.update({
     where: { id },
-    data: { statusId },
+    data: updateData,
     include: { status: true },
   });
 

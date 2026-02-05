@@ -70,7 +70,15 @@ export function PresentationForm({
   }, [open, departments.length]);
 
   useEffect(() => {
-    setDepartmentId(presentation?.department?.id ?? "");
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) {
+        setDepartmentId(presentation?.department?.id ?? "");
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [presentation?.department?.id]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {

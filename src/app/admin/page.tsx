@@ -49,8 +49,21 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (authenticated) fetchWorkshops();
-  }, [authenticated, fetchWorkshops]);
+    if (!authenticated) return;
+    let cancelled = false;
+    (async () => {
+      if (!cancelled) setLoading(true);
+      const res = await fetch("/api/workshops");
+      const data = await res.json();
+      if (!cancelled) {
+        setWorkshops(data);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authenticated]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
