@@ -57,3 +57,11 @@ model Department {
   name          String         @unique
   presentations Presentation[]
 }
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

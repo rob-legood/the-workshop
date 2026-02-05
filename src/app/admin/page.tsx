@@ -11,6 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AdminDataTable } from "@/components/admin-data-table";
 import { CreateWorkshopForm } from "@/components/create-workshop-form";
 
@@ -39,6 +46,8 @@ export default function AdminPage() {
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingWorkshop, setEditingWorkshop] = useState<Workshop | null>(null);
+  const [metricsYear, setMetricsYear] = useState<string>("");
+  const [savingSettings, setSavingSettings] = useState(false);
 
   const fetchWorkshops = useCallback(async () => {
     setLoading(true);
@@ -64,6 +73,25 @@ export default function AdminPage() {
       cancelled = true;
     };
   }, [authenticated]);
+
+  useEffect(() => {
+    if (!authenticated) return;
+    fetch("/api/settings?key=metricsYear")
+      .then((res) => res.json())
+      .then((setting) => {
+        setMetricsYear(setting?.value || String(new Date().getFullYear()));
+      });
+  }, [authenticated]);
+
+  async function handleSaveMetricsYear() {
+    setSavingSettings(true);
+    await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "metricsYear", value: metricsYear }),
+    });
+    setSavingSettings(false);
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -138,6 +166,43 @@ export default function AdminPage() {
             workshop={editingWorkshop}
             onCancel={() => setEditingWorkshop(null)}
           />
+        </div>
+
+        <div className="mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Settings</CardTitle>
+              <CardDescription>Configure application settings</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-end gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="metricsYear">Default Metrics Year</Label>
+                  <Select value={metricsYear} onValueChange={setMetricsYear}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 6 }, (_, i) => {
+                        const year = String(new Date().getFullYear() - i);
+                        return (
+                          <SelectItem key={year} value={year}>
+                            {year}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  onClick={handleSaveMetricsYear}
+                  disabled={savingSettings}
+                >
+                  {savingSettings ? "Saving..." : "Save"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <h2 className="mb-4 text-xl font-semibold">
