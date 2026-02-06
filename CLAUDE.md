@@ -54,6 +54,13 @@ Dynamic route params use the Next.js 16 async pattern: `{ params }: { params: Pr
 - `/` — Public landing page. Client component that fetches workshops and renders `WorkshopCard` components with presentation signup dialogs.
 - `/admin` — PIN-gated admin dashboard. Client-side auth state (no sessions/tokens). Shows `CreateWorkshopForm` and `AdminDataTable` with per-workshop presenter tables.
 
+### Navigation
+
+The app has **two separate navigation bars**:
+
+- **Public nav** (`src/components/nav-header.tsx`): Rendered by the root layout for all public pages. Links to Past, Feedback, Metrics. Automatically hidden on `/admin` routes.
+- **Admin nav** (`src/app/admin/layout.tsx`): A distinct admin layout with its own nav bar (visually differentiated with `bg-muted/40`). Shows "The Workshop Admin" branding, admin-specific links (Dashboard, etc.), and a "Back to site" link. New admin pages should be added as sub-routes under `/admin` and their links added to this nav.
+
 ### Component Organization
 
 - `src/components/ui/` — shadcn/ui primitives (Card, Table, Button, Input, Label, Dialog, Badge). Style variant: "new-york". Do not edit directly; re-add via `npx shadcn@latest add <component>`.

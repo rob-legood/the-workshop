@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 export function NavHeader() {
   const pathname = usePathname();
 
+  if (pathname.startsWith("/admin")) return null;
+
   const links = [
     { href: "/past", label: "Past" },
     { href: "/feedback", label: "Feedback" },
