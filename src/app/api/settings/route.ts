@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getDb } from "@/lib/prisma";
+import {
+  ValidationError,
+  integer,
+  readJson,
+  writeRoute,
+} from "@/lib/validation";
 
 export async function GET(request: Request) {
+  const prisma = await getDb();
   const { searchParams } = new URL(request.url);
   const key = searchParams.get("key");
 
@@ -16,16 +23,22 @@ export async function GET(request: Request) {
   return NextResponse.json(settings);
 }
 
-export async function POST(request: Request) {
-  const body = await request.json();
-  const { key, value } = body;
+// Only these keys can be written through the API (each with its own check).
+const WRITABLE_SETTINGS: Record<string, (value: unknown) => string> = {
+  metricsYear: (value) =>
+    String(integer(value, "Metrics year", { min: 2000, max: 2100 })),
+};
 
-  if (!key || value === undefined) {
-    return NextResponse.json(
-      { error: "Key and value are required" },
-      { status: 400 }
-    );
+export const POST = writeRoute(async (request: Request) => {
+  const prisma = await getDb();
+  const body = await readJson(request);
+  const key = typeof body.key === "string" ? body.key : "";
+  const parse = WRITABLE_SETTINGS[key];
+
+  if (!Object.hasOwn(WRITABLE_SETTINGS, key)) {
+    throw new ValidationError("Unknown setting");
   }
+  const value = parse(body.value);
 
   const setting = await prisma.setting.upsert({
     where: { key },
@@ -34,4 +47,4 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json(setting);
-}
+});

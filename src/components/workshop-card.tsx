@@ -1,5 +1,6 @@
 "use client";
 
+import { LIMITS } from "@/lib/limits";
 import { useState } from "react";
 import {
   Card,
@@ -125,6 +126,7 @@ function FeedbackDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+              maxLength={LIMITS.name}
               placeholder="Enter your name"
               required
             />
@@ -138,6 +140,7 @@ function FeedbackDialog({
               value={text}
               onChange={(e) => setText(e.target.value)}
               className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+              maxLength={LIMITS.feedbackText}
               placeholder="Share your feedback..."
               rows={3}
               required

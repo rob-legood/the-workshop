@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { readJson, writeRoute } from "@/lib/validation";
 
-const ADMIN_PIN = process.env.ADMIN_PIN || "1234";
+// Rate-limited via writeRoute, which also slows PIN guessing.
+export const POST = writeRoute(async (request: Request) => {
+  const { env } = await getCloudflareContext({ async: true });
+  const adminPin = env.ADMIN_PIN || "1234";
+  const { pin } = await readJson(request);
 
-export async function POST(request: Request) {
-  const body = await request.json();
-  const { pin } = body;
-
-  if (pin === ADMIN_PIN) {
+  if (pin === adminPin) {
     return NextResponse.json({ authenticated: true });
   }
 
@@ -14,4 +16,4 @@ export async function POST(request: Request) {
     { authenticated: false, error: "Invalid PIN" },
     { status: 401 }
   );
-}
+});

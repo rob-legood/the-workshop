@@ -1,0 +1,48 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "the-workshop",
+	"main": ".open-next/worker.js",
+	"compatibility_date": "2026-11-01",
+	"compatibility_flags": [
+		"nodejs_compat",
+		"global_fetch_strictly_public"
+	],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"services": [
+		{
+			"binding": "WORKER_SELF_REFERENCE",
+			"service": "the-workshop"
+		}
+	],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "the-workshop",
+			"database_id": "5cbc8605-0235-42ec-a35a-df82be2215ac",
+			"migrations_dir": "migrations"
+		}
+	],
+	"ratelimits": [
+		{
+			// Limits write requests (POST/PUT/PATCH) per visitor IP.
+			"name": "WRITE_LIMITER",
+			"namespace_id": "4271",
+			"simple": {
+				"limit": 20,
+				"period": 60
+			}
+		}
+	],
+	"vars": {
+		// Wipes and reseeds the database daily, and shows the demo banner.
+		"DEMO_MODE": "true",
+		"DEMO_TIMEZONE": "America/Toronto"
+		// ADMIN_PIN defaults to 1234. To change it: npx wrangler secret put ADMIN_PIN
+	},
+	"observability": {
+		"enabled": true
+	}
+}

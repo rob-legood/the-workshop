@@ -1,5 +1,6 @@
 "use client";
 
+import { LIMITS, MAX_MINUTES } from "@/lib/limits";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,6 +100,7 @@ export function CreateWorkshopForm({
               id="chair"
               name="chair"
               required
+              maxLength={LIMITS.chair}
               placeholder="e.g. Jane Doe"
               defaultValue={workshop?.chair ?? ""}
             />
@@ -122,7 +124,8 @@ export function CreateWorkshopForm({
               name="maxMinutes"
               type="number"
               defaultValue={workshop?.maxMinutes ?? 35}
-              min={1}
+              min={MAX_MINUTES.min}
+              max={MAX_MINUTES.max}
             />
           </div>
           {error && (

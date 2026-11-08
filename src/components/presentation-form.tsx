@@ -1,5 +1,6 @@
 "use client";
 
+import { LIMITS, MINUTES } from "@/lib/limits";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -152,6 +153,7 @@ export function PresentationForm({
               id="title"
               name="title"
               required
+              maxLength={LIMITS.title}
               placeholder="e.g. Intro to GraphQL"
               defaultValue={presentation?.title ?? ""}
             />
@@ -162,6 +164,7 @@ export function PresentationForm({
               id="description"
               name="description"
               required
+              maxLength={LIMITS.description}
               placeholder="Brief description of your presentation"
               defaultValue={presentation?.description ?? ""}
             />
@@ -172,6 +175,7 @@ export function PresentationForm({
               id="name"
               name="name"
               required
+              maxLength={LIMITS.name}
               placeholder="Your full name"
               defaultValue={presentation?.name ?? ""}
             />
@@ -183,6 +187,7 @@ export function PresentationForm({
               name="email"
               type="email"
               required
+              maxLength={LIMITS.email}
               placeholder="you@company.com"
               defaultValue={presentation?.email ?? ""}
             />
@@ -209,7 +214,8 @@ export function PresentationForm({
               name="minutes"
               type="number"
               defaultValue={presentation?.minutes ?? 5}
-              min={1}
+              min={MINUTES.min}
+              max={MINUTES.max}
               required
             />
           </div>

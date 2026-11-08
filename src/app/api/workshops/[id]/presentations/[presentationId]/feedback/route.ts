@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getDb } from "@/lib/prisma";
+import { LIMITS, readJson, text, writeRoute } from "@/lib/validation";
 
 export async function GET(
   _request: Request,
@@ -7,6 +8,7 @@ export async function GET(
     params,
   }: { params: Promise<{ id: string; presentationId: string }> }
 ) {
+  const prisma = await getDb();
   const { id: workshopId, presentationId } = await params;
 
   const presentation = await prisma.presentation.findFirst({
@@ -24,22 +26,17 @@ export async function GET(
   return NextResponse.json(presentation.feedbacks);
 }
 
-export async function POST(
+export const POST = writeRoute(async (
   request: Request,
   {
     params,
   }: { params: Promise<{ id: string; presentationId: string }> }
-) {
+) => {
+  const prisma = await getDb();
   const { id: workshopId, presentationId } = await params;
-  const body = await request.json();
-  const { name, text } = body;
-
-  if (!name || !text) {
-    return NextResponse.json(
-      { error: "Name and text are required" },
-      { status: 400 }
-    );
-  }
+  const body = await readJson(request);
+  const name = text(body.name, "Name", LIMITS.name);
+  const feedbackText = text(body.text, "Feedback", LIMITS.feedbackText);
 
   const presentation = await prisma.presentation.findFirst({
     where: { id: presentationId, workshopId },
@@ -65,8 +62,8 @@ export async function POST(
   }
 
   const feedback = await prisma.feedback.create({
-    data: { name, text, presentationId, statusId: newStatus.id },
+    data: { name, text: feedbackText, presentationId, statusId: newStatus.id },
   });
 
   return NextResponse.json(feedback, { status: 201 });
-}
+});

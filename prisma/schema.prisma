@@ -1,6 +1,15 @@
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
+  runtime  = "cloudflare"
+}
+
+// Node.js build of the same client, for scripts run outside the Worker
+// (e.g. prisma/seed.ts). The app itself uses the Cloudflare client above.
+generator scripts {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma-node"
+  runtime  = "nodejs"
 }
 
 datasource db {

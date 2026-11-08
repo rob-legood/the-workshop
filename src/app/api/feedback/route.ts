@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getDb } from "@/lib/prisma";
+import { queryInt } from "@/lib/validation";
 
 export async function GET(request: Request) {
+  const prisma = await getDb();
   const { searchParams } = new URL(request.url);
-  const page = parseInt(searchParams.get("page") || "1", 10);
-  const limit = parseInt(searchParams.get("limit") || "10", 10);
+  const page = queryInt(searchParams.get("page"), 1, 10_000);
+  const limit = queryInt(searchParams.get("limit"), 10, 100);
   const showClosed = searchParams.get("showClosed") === "true";
   const departmentId = searchParams.get("departmentId");
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { LIMITS } from "@/lib/limits";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -400,6 +401,7 @@ function FeedbackEditDialog({
             <Label htmlFor="edit-name">From</Label>
             <Input
               id="edit-name"
+              maxLength={LIMITS.name}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -408,6 +410,7 @@ function FeedbackEditDialog({
             <Label htmlFor="edit-text">Feedback</Label>
             <Textarea
               id="edit-text"
+              maxLength={LIMITS.feedbackText}
               value={text}
               onChange={(e) => setText(e.target.value)}
               rows={4}

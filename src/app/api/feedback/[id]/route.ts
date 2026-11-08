@@ -1,62 +1,51 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getDb } from "@/lib/prisma";
+import {
+  LIMITS,
+  optionalText,
+  readJson,
+  writeRoute,
+} from "@/lib/validation";
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-  const body = await request.json();
-  const { statusId, name, text } = body;
+export const PATCH = writeRoute(
+  async (request: Request, { params }: { params: Promise<{ id: string }> }) => {
+    const prisma = await getDb();
+    const { id } = await params;
+    const body = await readJson(request);
 
-  // Build update data object with provided fields
-  const updateData: { statusId?: string; name?: string; text?: string } = {};
+    const updateData = {
+      statusId: optionalText(body.statusId, "Status", LIMITS.id),
+      name: optionalText(body.name, "Name", LIMITS.name),
+      text: optionalText(body.text, "Feedback", LIMITS.feedbackText),
+    };
 
-  if (statusId) {
-    const status = await prisma.feedbackStatus.findUnique({
-      where: { id: statusId },
+    if (Object.values(updateData).every((v) => v === undefined)) {
+      return NextResponse.json(
+        { error: "No valid fields to update" },
+        { status: 400 }
+      );
+    }
+
+    if (updateData.statusId) {
+      const status = await prisma.feedbackStatus.findUnique({
+        where: { id: updateData.statusId },
+      });
+      if (!status) {
+        return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+      }
+    }
+
+    const existing = await prisma.feedback.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "Feedback not found" }, { status: 404 });
+    }
+
+    const feedback = await prisma.feedback.update({
+      where: { id },
+      data: updateData,
+      include: { status: true },
     });
-    if (!status) {
-      return NextResponse.json(
-        { error: "Invalid status" },
-        { status: 400 }
-      );
-    }
-    updateData.statusId = statusId;
+
+    return NextResponse.json(feedback);
   }
-
-  if (name !== undefined) {
-    if (!name.trim()) {
-      return NextResponse.json(
-        { error: "Name cannot be empty" },
-        { status: 400 }
-      );
-    }
-    updateData.name = name.trim();
-  }
-
-  if (text !== undefined) {
-    if (!text.trim()) {
-      return NextResponse.json(
-        { error: "Feedback text cannot be empty" },
-        { status: 400 }
-      );
-    }
-    updateData.text = text.trim();
-  }
-
-  if (Object.keys(updateData).length === 0) {
-    return NextResponse.json(
-      { error: "No valid fields to update" },
-      { status: 400 }
-    );
-  }
-
-  const feedback = await prisma.feedback.update({
-    where: { id },
-    data: updateData,
-    include: { status: true },
-  });
-
-  return NextResponse.json(feedback);
-}
+);

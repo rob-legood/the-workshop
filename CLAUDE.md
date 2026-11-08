@@ -5,28 +5,41 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev          # Start Next.js dev server
-npm run build        # Production build
-npm run lint         # ESLint (flat config, eslint 9+)
-npm run db:migrate   # Run Prisma migrations (prisma migrate dev)
-npm run db:seed      # Seed database with sample data (npx tsx prisma/seed.ts)
-npm run db:reset     # Reset database and re-apply migrations
+npm install                      # Also runs `prisma generate` (postinstall)
+npm run dev                      # Next.js dev server, with Cloudflare bindings emulated locally
+npm run lint                     # ESLint (flat config, eslint 9+)
+npm run db:migrate               # Apply migrations/*.sql to the local D1 database
+npm run db:seed                  # Wipe and seed the local D1 database
+npm run db:reset                 # Delete local D1, re-migrate, re-seed
+npm run db:migration -- <name>   # Generate migrations/NNNN_<name>.sql from schema changes
+npm run preview                  # Build with OpenNext and run in workerd (needs symlinks: Windows Developer Mode or WSL)
+npm run deploy                   # Build and deploy to Cloudflare Workers
+npm run db:migrate:remote        # Apply migrations to the production D1 database
+npm run cf-typegen               # Regenerate cloudflare-env.d.ts after editing wrangler.jsonc
 ```
 
-After changing `prisma/schema.prisma`, run `npm run db:migrate` to generate a migration and regenerate the Prisma client.
+First-time setup: `npm install && npm run db:migrate && npm run dev` (in demo mode the app seeds itself on first request).
+
+Schema change workflow: edit `prisma/schema.prisma` → `npm run db:migration -- <name>` → review the SQL → `npm run db:migrate` → `npx prisma generate`.
 
 ## Architecture
 
-**The Workshop** is a Next.js 16 App Router application for internal presentation signup. It uses Tailwind v4, Prisma 7 with SQLite, and shadcn/ui components.
+**The Workshop** is a Next.js 16 App Router application for presentation signup, deployed to **Cloudflare Workers** via the OpenNext adapter (`@opennextjs/cloudflare`). It uses Tailwind v4, Prisma 7 with **Cloudflare D1** (SQLite), and shadcn/ui components. Config: `wrangler.jsonc`, `open-next.config.ts`.
 
-### Prisma + SQLite (better-sqlite3 adapter)
+### Prisma + D1
 
-Prisma 7 uses the `prisma-client` generator which requires a driver adapter. The app uses `@prisma/adapter-better-sqlite3`:
+- **Per-request client**: Workers forbid sharing a client across requests, so there is no singleton. Every route handler starts with `const prisma = await getDb();` (`src/lib/prisma.ts`), which builds a `PrismaD1` adapter from the `DB` binding via `getCloudflareContext({ async: true })`.
+- **Two generated clients** (both gitignored): `src/generated/prisma/` (`runtime = "cloudflare"`, used by the app; import from `@/generated/prisma/client`) and `src/generated/prisma-node/` (`runtime = "nodejs"`, used by Node scripts like `prisma/seed.ts`, which can't load the Cloudflare build's `.wasm?module` import).
+- **No transactions**: D1 doesn't support them; Prisma runs `$transaction` calls as individual queries. Don't rely on atomicity.
+- **Migrations**: plain SQL files in `migrations/` (Wrangler format), not `prisma/migrations`. `scripts/new-migration.mjs` replays them into a temp SQLite file and diffs against the schema.
+- **Local database**: Wrangler's emulated D1 in `.wrangler/state/` (gitignored).
 
-- **Singleton**: `src/lib/prisma.ts` — creates a `PrismaBetterSqlite3` adapter with `url: "file:dev.db"` and passes it to `PrismaClient({ adapter })`. Uses global caching for HMR.
-- **Generated client**: output at `src/generated/prisma/` (gitignored). Import from `@/generated/prisma/client`.
-- **Seed script**: `prisma/seed.ts` — must also construct its own adapter (can't use the `@/` alias). Imports from `../src/generated/prisma/client.js`.
-- **Database file**: `dev.db` lives at the project root (not inside `prisma/`), despite `DATABASE_URL=file:./dev.db` — Prisma CLI resolves that path relative to the schema directory.
+### Demo mode, validation, and rate limiting
+
+- **Demo mode** (`DEMO_MODE=true`): a Prisma query extension in `src/lib/prisma.ts` calls `ensureDailyDemoReset` (`src/lib/demo-reset.ts`) before queries. The first request of each day (in `DEMO_TIMEZONE`) atomically claims the `demoSeedDate` Setting row and wipes/reseeds via `src/lib/demo-seed.ts`. `DemoBanner` shows a notice with the admin PIN.
+- **Seed data** lives in `src/lib/demo-seed.ts`, shared by `npm run db:seed` and the daily reset. Dates are relative to today, so there are always past and upcoming workshops.
+- **Write routes** are wrapped in `writeRoute(...)` (`src/lib/validation.ts`): it rate-limits per IP via the `WRITE_LIMITER` binding (20/min) and turns a thrown `ValidationError` into a 400. Validate input with the helpers there (`text`, `email`, `integer`, `date`, `readJson`). Length limits live in `src/lib/limits.ts` and are shared with form `maxLength`s.
+- **Settings API** only accepts keys listed in `WRITABLE_SETTINGS` (`src/app/api/settings/route.ts`).
 
 ### Data Models
 
@@ -73,6 +86,9 @@ Tailwind v4 with `@theme inline` in `globals.css`. Uses oklch color space for al
 
 ## Environment Variables
 
-Defined in `.env` (gitignored):
-- `DATABASE_URL` — SQLite connection string for Prisma CLI migrations
-- `ADMIN_PIN` — PIN for admin dashboard access
+Read at runtime from the Cloudflare env (`getCloudflareContext`), not `process.env`. Set in `wrangler.jsonc` `vars`; override locally in `.dev.vars` (gitignored).
+- `DEMO_MODE` — `"true"` enables the daily reset and demo banner (on by default in `wrangler.jsonc`; set `DEMO_MODE=false` in `.dev.vars` to keep local data across days)
+- `DEMO_TIMEZONE` — IANA timezone defining "a new day" for resets (default `America/Toronto`)
+- `ADMIN_PIN` — admin PIN, default `1234`. Set in production with `npx wrangler secret put ADMIN_PIN`.
+
+`DATABASE_URL` in `.env` is only used by the Prisma CLI (`prisma.config.ts`); the app doesn't use it.
